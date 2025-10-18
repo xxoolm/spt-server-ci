@@ -149,9 +149,9 @@ jobs:
     needs: [prepare, build-server-host]
     runs-on: ubuntu-latest
     env:
-      DOCKERHUB_USER: stblog
+      DOCKERHUB_USER: xxoolm
       DOCKERHUB_REPOSITORY: spt-server
-      GHCR_USER: airryco
+      GHCR_USER: xxoolm
       GHCR_REPOSITORY: spt-server
     outputs:
       DOCKER_DIGEST_AMD64: ${{ steps.build-and-push-amd64.outputs.digest }}
