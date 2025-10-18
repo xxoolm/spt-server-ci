@@ -232,7 +232,6 @@ jobs:
           images: |
             ${{ env.DOCKERHUB_USER }}/${{ env.DOCKERHUB_REPOSITORY }}
             ghcr.io/${{ env.GHCR_USER }}/${{ env.GHCR_REPOSITORY }}
-            registry.cn-shenzhen.aliyuncs.com/spt-server/spt-server
           tags: |
             type=raw,value=nightly
       - name: Extract metadata for Arm64
@@ -242,7 +241,6 @@ jobs:
           images: |
             ${{ env.DOCKERHUB_USER }}/${{ env.DOCKERHUB_REPOSITORY }}
             ghcr.io/${{ env.GHCR_USER }}/${{ env.GHCR_REPOSITORY }}
-            registry.cn-shenzhen.aliyuncs.com/spt-server/spt-server
           tags: |
             type=raw,value=nightly-arm64
 
@@ -265,12 +263,12 @@ jobs:
           username: ${{ env.GHCR_USER }}
           password: ${{ secrets.GHCR_TOKEN }}
       # Aliyun Registry
-      - name: Login to Aliyun Registry
-        uses: docker/login-action@v3
-        with:
-          registry: registry.cn-shenzhen.aliyuncs.com
-          username: ${{ secrets.ALIYUN_REGISTRY_USER }}
-          password: ${{ secrets.ALIYUN_REGISTRY_TOKEN }}
+      #- name: Login to Aliyun Registry
+      #  uses: docker/login-action@v3
+      #  with:
+      #    registry: registry.cn-shenzhen.aliyuncs.com
+      #    username: ${{ secrets.ALIYUN_REGISTRY_USER }}
+      #    password: ${{ secrets.ALIYUN_REGISTRY_TOKEN }}
 
       - name: Build and Push For AMD64
         id: build-and-push-amd64
@@ -385,8 +383,7 @@ jobs:
 
             ```bash
             docker pull stblog/spt-server:nightly
-            docker pull ghcr.io/airryco/spt-server:nightly
-            docker pull registry.cn-shenzhen.aliyuncs.com/spt-server/spt-server:nightly
+            docker pull ghcr.io/xxoolm/spt-server:nightly
             ```
 
             For linux/arm64:
@@ -397,8 +394,7 @@ jobs:
 
             ```bash
             docker pull stblog/spt-server:nightly-arm64
-            docker pull ghcr.io/airryco/spt-server:nightly-arm64
-            docker pull registry.cn-shenzhen.aliyuncs.com/spt-server/spt-server:nightly-arm64
+            docker pull ghcr.io/xxoolm/spt-server:nightly-arm64
             ```
 
             > [!WARNING]
