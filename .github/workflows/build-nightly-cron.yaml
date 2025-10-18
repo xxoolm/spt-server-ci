@@ -12,7 +12,7 @@ env:
   SERVER_URL: https://github.com
   REPOSITORY_SPT_SERVER: sp-tarkov/server-csharp
   REPOSITORY_SPT_SERVER_AIRRYCO: AirryCo/spt-server
-  NIGHTLY_BRANCH: 4.0.0
+  NIGHTLY_BRANCH: main
 
 jobs:
   prepare:
