@@ -49,3 +49,5 @@ sed -Ei "s/\"backendPort\": ([0-9]|[1-9][1-9]{1,3}|[1-5][0-9]{4}|6[1-4][0-9]{3}|
 sed -Ei "s/\"webSocketPingDelayMs\": ([0-9]{1,}),/\"webSocketPingDelayMs\": ${PINGDELAYMS},/g" SPT_Data/configs/http.json
 
 chmod +x SPT.Server.Linux && ./SPT.Server.Linux
+
+mv sptLogger.Development.json sptLogger.json
