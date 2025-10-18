@@ -29,7 +29,7 @@ jobs:
         id: versions
         run: |
           echo "CLIENT_VERSION=4.0.0" >> $GITHUB_OUTPUT
-          echo "SPT_VERSION=4.0.1" >> $GITHUB_OUTPUT
+          echo "SPT_VERSION=4.0.0" >> $GITHUB_OUTPUT
           echo "SPT_COMMIT_ID=${{ env.FIXED_COMMIT }}" >> $GITHUB_OUTPUT
           echo "DATE_TIME=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
           echo "✅ 将构建指定提交：${{ env.FIXED_COMMIT }}"
