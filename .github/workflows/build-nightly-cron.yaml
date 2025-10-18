@@ -1,5 +1,4 @@
-name: SPT-Server Nightly
-
+name: SPT-服务器 每夜构建
 on:
   schedule:
     - cron: '30 2 * * *'
@@ -7,128 +6,77 @@ on:
     paths:
       - '.github/workflows/build-nightly-cron.yaml'
   workflow_dispatch:
-  
 env:
   SERVER_URL: https://github.com
   REPOSITORY_SPT_SERVER: sp-tarkov/server-csharp
-  REPOSITORY_SPT_SERVER_AIRRYCO: AirryCo/spt-server
+  FIXED_COMMIT: 0582f8d5fca6ec4808056219684e6167b8a8ff89
   NIGHTLY_BRANCH: main
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      PROCEED: ${{ steps.compare-hash.outputs.PROCEED }}
-      PROCEED_FIKA: ${{ steps.compare-fika.outputs.PROCEED }}
-      BUILT_HASH: ${{ steps.compare-hash.outputs.BUILT_HASH }}
-      CLIENT_VERSION: ${{ steps.versions.outputs.CLIENT_VERSION }}
-      SPT_VERSION: ${{ steps.versions.outputs.SPT_VERSION }}
-      SPT_COMMIT_ID: ${{ steps.versions.outputs.SPT_COMMIT_ID }}
-      FIKA_SERVER_COMMIT: ${{ steps.compare-fika.outputs.FIKA_SERVER_COMMIT }}
+      PROCEED: true  # 始终构建
+      CLIENT_VERSION: 4.0.0  # 强制指定 EFT 版本
+      SPT_VERSION: 4.0.0
+      SPT_COMMIT_ID: ${{ env.FIXED_COMMIT }}
       BUILD_DATE_TIME: ${{ steps.versions.outputs.DATE_TIME }}
-      BUILD_TYPE: BLEEDINGEDGEMODS # BLEEDINGEDGE BLEEDINGEDGEMODS Release
-      BUILD_CONFIG: Debug # Debug Release
-
+      BUILD_TYPE: BLEEDINGEDGEMODS
+      BUILD_CONFIG: Debug
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
-      - name: Get Latest Commit From SPT
-        id: get-latest-commit
-        run: |
-          SPT_COMMIT_ID=$(git ls-remote ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git refs/heads/${{ env.NIGHTLY_BRANCH }} | awk '{print $1}')
-          SPT_COMMIT_ID=${SPT_COMMIT_ID:0:8}
-          echo "👽 SPT_COMMIT_ID = $SPT_COMMIT_ID"
-          echo "SPT_COMMIT_ID=$SPT_COMMIT_ID" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Compare Hashes
-        id: compare-hash
-        run: |
-          git pull
-          source trigger.nightly
-          server_last_built_hash=${server:0:8}
-          server_latest_commit_hash=${{ steps.get-latest-commit.outputs.SPT_COMMIT_ID }}
-          if [ "$server_last_built_hash" != "$server_latest_commit_hash" ]; then
-            echo "✅ There is different between last-built-hash and lastest-commit-hash, continue to build."
-            echo "PROCEED=true" >> $GITHUB_OUTPUT
-          else
-            echo "PROCEED=false" >> $GITHUB_OUTPUT
-          fi
-          echo "BUILT_HASH=$server_last_built_hash" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Extract versions
+      - name: 设置版本信息
         id: versions
-        if: steps.compare-hash.outputs.PROCEED == 'true'
         run: |
-          SPT_COMMIT_ID=${{ steps.get-latest-commit.outputs.SPT_COMMIT_ID }}
-
-          # Extract versions from core.json
-          wget https://raw.githubusercontent.com/${{ env.REPOSITORY_SPT_SERVER }}/refs/heads/${{ env.NIGHTLY_BRANCH }}/Libraries/SPTarkov.Server.Assets/SPT_Data/configs/core.json
-          SPT_VERSION=4.0.1
-          CLIENT_VERSION=$(jq -r '.compatibleTarkovVersion' core.json)
-
-          echo "👽 CLIENT_VERSION = $CLIENT_VERSION"
-          echo "👽 SPT_VERSION = $SPT_VERSION"
-          echo "👽 SPT_COMMIT_ID = $SPT_COMMIT_ID"
-
-          echo "CLIENT_VERSION=$CLIENT_VERSION" >> $GITHUB_OUTPUT
-          echo "SPT_VERSION=$SPT_VERSION" >> $GITHUB_OUTPUT
-          echo "SPT_COMMIT_ID=$SPT_COMMIT_ID" >> $GITHUB_OUTPUT
+          echo "CLIENT_VERSION=4.0.0" >> $GITHUB_OUTPUT
+          echo "SPT_VERSION=4.0.1" >> $GITHUB_OUTPUT
+          echo "SPT_COMMIT_ID=${{ env.FIXED_COMMIT }}" >> $GITHUB_OUTPUT
           echo "DATE_TIME=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
+          echo "✅ 将构建指定提交：${{ env.FIXED_COMMIT }}"
+          echo "✅ EFT 游戏版本强制设为：4.0.0"
         shell: bash
 
   build-server-host:
     needs: prepare
-    if: needs.prepare.outputs.PROCEED == 'true'
+    # 移除 if 条件，因为 PROCEED 恒为 true
     runs-on: ubuntu-latest
     container:
       image: refringe/spt-build-dotnet:2.0.2
     outputs:
-      COMMIT_ID_LONG: ${{ steps.debug-info.outputs.COMMIT_ID_LONG }}
-      COMMIT_ID_SHORT: ${{ steps.debug-info.outputs.COMMIT_ID_SHORT }}
+      COMMIT_ID_LONG: ${{ env.FIXED_COMMIT }}
+      COMMIT_ID_SHORT: ${{ env.FIXED_COMMIT }}
       SPT_COMMIT_TIME: ${{ steps.debug-info.outputs.SPT_COMMIT_TIME }}
       WIN_ARTIFACT: ${{ steps.filename.outputs.WIN_ARTIFACT }}
       WIN_RELEASE_FILE: ${{ steps.filename.outputs.WIN_RELEASE }}
       LINUX_ARTIFACT: ${{ steps.filename.outputs.LINUX_ARTIFACT }}
       LINUX_RELEASE_FILE: ${{ steps.filename.outputs.LINUX_RELEASE }}
-
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
-
-      - name: Clone Server
+      - name: 克隆指定版本的服务器代码
         run: |
-          git clone -b ${{ env.NIGHTLY_BRANCH }} --depth=1 ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git /snapshot
+          git clone ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git /snapshot
           cd /snapshot
+          git checkout ${{ env.FIXED_COMMIT }}
           git lfs pull
-
-      - name: Runner Debug Information
+      - name: 调试信息
         id: debug-info
         run: |
           cd /snapshot
-          echo "git version: $(git --version)"
-          echo "git lfs version: $(git-lfs --version)"
-          echo "latest commit hash: $(git rev-parse HEAD)"
-          echo "last commit message:" && git log -1 --pretty=%B
-
-          echo "COMMIT_ID_LONG=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-          echo "COMMIT_ID_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "SPT_COMMIT_TIME"=$(git log --pretty=format:"%ai" ${{ env.NIGHTLY_BRANCH }} -1) >> $GITHUB_OUTPUT
+          echo "正在构建提交：$(git rev-parse HEAD)"
+          echo "SPT_COMMIT_TIME=$(git log --pretty=format:"%ai" -1)" >> $GITHUB_OUTPUT
         shell: bash
-
-      - name: Replace Background Image
-        id: bg
+      - name: 替换启动器背景图
         run: |
           cp custom/bg.png /snapshot/Libraries/SPTarkov.Server.Assets/SPT_Data/images/launcher/
         shell: bash
-
-      - name: Replace projectName For Windows
+      - name: 为 Windows 版本设置项目名称
         run: |
           cd /snapshot/Libraries/SPTarkov.Server.Assets/SPT_Data/configs
           git checkout core.json
-          sed -i "s/\"projectName\": \"SPT\",/\"projectName\": \"AirryCo's SPT Windows\",/g" core.json
+          sed -i "s/\"projectName\": \"SPT\",/\"projectName\": \"AirryCo 的 SPT Windows\",/g" core.json
         shell: bash
-
-      - name: Publish Windows Server
+      - name: 构建 Windows 服务器
         run: |
           dotnet publish ./SPTarkov.Server/SPTarkov.Server.csproj \
             -c ${{ needs.prepare.outputs.BUILD_CONFIG }} \
@@ -140,19 +88,17 @@ jobs:
             -p:SptBuildType=${{ needs.prepare.outputs.BUILD_TYPE }} \
             -p:SptVersion=${{ needs.prepare.outputs.SPT_VERSION }} \
             -p:SptBuildTime=$( date +%Y%m%d ) \
-            -p:SptCommit=${{ steps.debug-info.outputs.COMMIT_ID_SHORT }} \
+            -p:SptCommit=${{ env.FIXED_COMMIT }} \
             -p:IsPublish=true
         shell: bash
         working-directory: /snapshot
-
-      - name: Replace projectName For Linux
+      - name: 为 Linux 版本设置项目名称
         run: |
           cd /snapshot/Libraries/SPTarkov.Server.Assets/SPT_Data/configs
           git checkout core.json
-          sed -i "s/\"projectName\": \"SPT\",/\"projectName\": \"AirryCo's SPT Linux\",/g" core.json
+          sed -i "s/\"projectName\": \"SPT\",/\"projectName\": \"AirryCo 的 SPT Linux\",/g" core.json
         shell: bash
-
-      - name: Publish Linux Server
+      - name: 构建 Linux 服务器
         run: |
           dotnet publish ./SPTarkov.Server/SPTarkov.Server.csproj \
             -c ${{ needs.prepare.outputs.BUILD_CONFIG }} \
@@ -164,26 +110,23 @@ jobs:
             -p:SptBuildType=${{ needs.prepare.outputs.BUILD_TYPE }} \
             -p:SptVersion=${{ needs.prepare.outputs.SPT_VERSION }} \
             -p:SptBuildTime=$( date +%Y%m%d ) \
-            -p:SptCommit=${{ steps.debug-info.outputs.COMMIT_ID_SHORT }} \
+            -p:SptCommit=${{ env.FIXED_COMMIT }} \
             -p:IsPublish=true
         shell: bash
         working-directory: /snapshot
-
-      - name: Generate File Name
+      - name: 生成文件名
         id: filename
         run: |
-          win_artifact_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-win-nightly-${{ steps.debug-info.outputs.COMMIT_ID_SHORT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}-artifact
-          win_release_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-win-nightly-${{ steps.debug-info.outputs.COMMIT_ID_SHORT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}.zip
+          win_artifact_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-win-nightly-${{ env.FIXED_COMMIT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}-artifact
+          win_release_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-win-nightly-${{ env.FIXED_COMMIT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}.zip
+          linux_artifact_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-linux-nightly-${{ env.FIXED_COMMIT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}-artifact
+          linux_release_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-linux-nightly-${{ env.FIXED_COMMIT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}.zip
           echo "WIN_ARTIFACT=$win_artifact_name" >> $GITHUB_OUTPUT
           echo "WIN_RELEASE=$win_release_name" >> $GITHUB_OUTPUT
-
-          linux_artifact_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-linux-nightly-${{ steps.debug-info.outputs.COMMIT_ID_SHORT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}-artifact
-          linux_release_name=spt-server-${{ needs.prepare.outputs.SPT_VERSION }}-linux-nightly-${{ steps.debug-info.outputs.COMMIT_ID_SHORT }}-EFT${{ needs.prepare.outputs.CLIENT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}.zip
           echo "LINUX_ARTIFACT=$linux_artifact_name" >> $GITHUB_OUTPUT
           echo "LINUX_RELEASE=$linux_release_name" >> $GITHUB_OUTPUT
         shell: bash
-
-      - name: Artifact Windows Server
+      - name: 上传 Windows 构建产物
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.filename.outputs.WIN_ARTIFACT }}
@@ -192,8 +135,7 @@ jobs:
             !/snapshot/SPTarkov.Server/bin/${{ needs.prepare.outputs.BUILD_CONFIG }}/net9.0/win-x64/publish/**/*.pdb
           overwrite: true
           if-no-files-found: error
-
-      - name: Artifact Linux Server
+      - name: 上传 Linux 构建产物
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.filename.outputs.LINUX_ARTIFACT }}
@@ -211,21 +153,17 @@ jobs:
       DOCKERHUB_REPOSITORY: spt-server
       GHCR_USER: airryco
       GHCR_REPOSITORY: spt-server
-
     outputs:
       DOCKER_DIGEST_AMD64: ${{ steps.build-and-push-amd64.outputs.digest }}
       DOCKER_IMAGEID_AMD64: ${{ steps.build-and-push-amd64.outputs.imageid }}
       DOCKER_DIGEST_ARM64: ${{ steps.build-and-push-arm64.outputs.digest }}
       DOCKER_IMAGEID_ARM64: ${{ steps.build-and-push-arm64.outputs.imageid }}
-
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
-      - name: Pull Files
+      - name: 拉取文件
         run: git pull
-
-      # docker
-      - name: Extract metadata for AMD64
+      - name: 为 AMD64 提取 Docker 元数据
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -234,7 +172,7 @@ jobs:
             ghcr.io/${{ env.GHCR_USER }}/${{ env.GHCR_REPOSITORY }}
           tags: |
             type=raw,value=nightly
-      - name: Extract metadata for Arm64
+      - name: 为 ARM64 提取 Docker 元数据
         id: meta-arm64
         uses: docker/metadata-action@v5
         with:
@@ -243,34 +181,22 @@ jobs:
             ghcr.io/${{ env.GHCR_USER }}/${{ env.GHCR_REPOSITORY }}
           tags: |
             type=raw,value=nightly-arm64
-
-      - name: Set up QEMU
+      - name: 设置 QEMU
         uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
+      - name: 设置 Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      # DockerHub
-      - name: Login to Dockerhub
+      - name: 登录 DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      # GitHub Container Registry
-      - name: Login to Github Container Registry
+      - name: 登录 GitHub 容器注册表
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ env.GHCR_USER }}
           password: ${{ secrets.GHCR_TOKEN }}
-      # Aliyun Registry
-      #- name: Login to Aliyun Registry
-      #  uses: docker/login-action@v3
-      #  with:
-      #    registry: registry.cn-shenzhen.aliyuncs.com
-      #    username: ${{ secrets.ALIYUN_REGISTRY_USER }}
-      #    password: ${{ secrets.ALIYUN_REGISTRY_TOKEN }}
-
-      - name: Build and Push For AMD64
+      - name: 构建并推送 AMD64 镜像
         id: build-and-push-amd64
         uses: docker/build-push-action@v6
         with:
@@ -281,14 +207,13 @@ jobs:
           labels: |
             ${{ steps.meta.outputs.labels }}
             org.opencontainers.image.version=${{ env.NIGHTLY_BRANCH }}
-            org.opencontainers.image.revision=${{ needs.build-server-host.outputs.COMMIT_ID_LONG }}
+            org.opencontainers.image.revision=${{ env.FIXED_COMMIT }}
           platforms: linux/amd64
           build-args: |
             SPT_BUILD_TYPE=${{ needs.prepare.outputs.BUILD_TYPE }}
             SPT_BUILD_CONFIG=${{ needs.prepare.outputs.BUILD_CONFIG }}
             SPT_VERSION=${{ needs.prepare.outputs.SPT_VERSION }}
-
-      - name: Build and Push For ARM64
+      - name: 构建并推送 ARM64 镜像
         id: build-and-push-arm64
         uses: docker/build-push-action@v6
         with:
@@ -299,7 +224,7 @@ jobs:
           labels: |
             ${{ steps.meta-arm64.outputs.labels }}
             org.opencontainers.image.version=${{ env.NIGHTLY_BRANCH }}
-            org.opencontainers.image.revision=${{ needs.build-server-host.outputs.COMMIT_ID_LONG }}
+            org.opencontainers.image.revision=${{ env.FIXED_COMMIT }}
           platforms: linux/arm64
           build-args: |
             SPT_BUILD_TYPE=${{ needs.prepare.outputs.BUILD_TYPE }}
@@ -310,98 +235,73 @@ jobs:
     needs: [prepare, build-server-host, build-docker-image-multi-arch]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
-      - name: Update trigger and Push to GitHub
+      - name: 更新触发文件并推送
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "bot@stblog.com.cn"
           git pull
-          rm trigger.nightly
-          server=${{ needs.prepare.outputs.SPT_COMMIT_ID }}
-          echo "server=$server" > trigger.nightly
-          changes=$(git status --porcelain)
-          if [ -n "$changes" ]; then
-            git add trigger.nightly
-            git commit -m "🤖 auto built spt-server: \`$server\`."
-            git push
-          fi
+          rm -f trigger.nightly
+          echo "server=${{ env.FIXED_COMMIT }}" > trigger.nightly
+          git add trigger.nightly
+          git commit -m "🤖 自动构建 SPT 服务器：\`${{ env.FIXED_COMMIT }}\`"
+          git push
         shell: bash
 
   assemble-and-publish:
     needs: [prepare, build-server-host, build-docker-image-multi-arch, update-trigger-and-push]
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
-
-      - name: Download Windows Artifact
+      - name: 下载 Windows 构建产物
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build-server-host.outputs.WIN_ARTIFACT }}
           path: windows
-
-      - name: Download Linux Artifact
+      - name: 下载 Linux 构建产物
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build-server-host.outputs.LINUX_ARTIFACT }}
           path: linux
-
-      - name: Compress Releases
-        id: compress-release
+      - name: 压缩发布包
         run: |
           cd windows
           zip -r ../${{ needs.build-server-host.outputs.WIN_RELEASE_FILE }} *
           cd ../linux
           zip -r ../${{ needs.build-server-host.outputs.LINUX_RELEASE_FILE }} *
-          ls -R ..
         shell: bash
-
-      - name: Create Github Pre-release
+      - name: 创建 GitHub 预发布
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ needs.prepare.outputs.BUILD_DATE_TIME }}
           tag_name: ${{ needs.prepare.outputs.BUILD_DATE_TIME }}
           prerelease: true
           body: |
-            SPT: ***${{ needs.prepare.outputs.SPT_VERSION }}***
+            SPT 版本：***${{ needs.prepare.outputs.SPT_VERSION }}***  
+            Tarkov 游戏版本：***${{ needs.prepare.outputs.CLIENT_VERSION }}***  
+            [SPT/Server](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}) 提交哈希：[${{ env.FIXED_COMMIT }}](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}/tree/${{ env.FIXED_COMMIT }})  
+            构建时间：***${{ needs.prepare.outputs.BUILD_DATE_TIME }}***  
 
-            Tarkov: ***${{ needs.prepare.outputs.CLIENT_VERSION }}***
+            **支持 Docker（linux/amd64 和 linux/arm64）**：  
 
-            [SPT/Server](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}) commit hash: [${{ needs.prepare.outputs.SPT_COMMIT_ID }}](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}/tree/${{ needs.prepare.outputs.SPT_COMMIT_ID }}), commit time: **${{ needs.build-server-host.outputs.SPT_COMMIT_TIME }}**
-
-            Build time: ***${{ needs.prepare.outputs.BUILD_DATE_TIME }}***
-
-            **Docker Supported For linux/amd64 and linux/arm64**:
-
-            For liunx/amd64:
-
-            image id: `${{ needs.build-docker-image-multi-arch.outputs.DOCKER_IMAGEID_AMD64 }}`
-
-            digest: `${{ needs.build-docker-image-multi-arch.outputs.DOCKER_DIGEST_AMD64 }}`
-
+            AMD64 镜像：  
             ```bash
             docker pull stblog/spt-server:nightly
             docker pull ghcr.io/xxoolm/spt-server:nightly
             ```
 
-            For linux/arm64:
-
-            image id: `${{ needs.build-docker-image-multi-arch.outputs.DOCKER_IMAGEID_ARM64 }}`
-
-            digest: `${{ needs.build-docker-image-multi-arch.outputs.DOCKER_DIGEST_ARM64 }}`
-
+            ARM64 镜像：  
             ```bash
             docker pull stblog/spt-server:nightly-arm64
             docker pull ghcr.io/xxoolm/spt-server:nightly-arm64
             ```
 
-            > [!WARNING]
-            > After downloading, please use extraction software like WinRAR or [7-Zip](https://www.7-zip.org/) to unzip the files, then copy them to the Tarkov root directory. Do not use Windows File Explorer to directly open and copy the files.
+            > [!WARNING]  
+            > 下载后请使用 WinRAR 或 [7-Zip](https://www.7-zip.org/) 解压，然后复制到 Tarkov 根目录。**不要使用 Windows 资源管理器直接解压和复制文件**。  
 
-            Full Changelog: [${{ needs.prepare.outputs.BUILT_HASH }}...${{ needs.prepare.outputs.SPT_COMMIT_ID }}](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}/compare/${{ needs.prepare.outputs.BUILT_HASH }}...${{ needs.prepare.outputs.SPT_COMMIT_ID }})
-
+            完整更新日志：[${{ env.FIXED_COMMIT }}](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}/commit/${{ env.FIXED_COMMIT }})
           files: |
             ${{ needs.build-server-host.outputs.WIN_RELEASE_FILE }}
             ${{ needs.build-server-host.outputs.LINUX_RELEASE_FILE }}
