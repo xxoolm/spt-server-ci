@@ -172,6 +172,7 @@ jobs:
             ghcr.io/${{ env.GHCR_USER }}/${{ env.GHCR_REPOSITORY }}
           tags: |
             type=raw,value=nightly
+            type=raw,value=${{ needs.prepare.outputs.SPT_VERSION }}-nightly
       - name: 为 ARM64 提取 Docker 元数据
         id: meta-arm64
         uses: docker/metadata-action@v5
@@ -181,6 +182,7 @@ jobs:
             ghcr.io/${{ env.GHCR_USER }}/${{ env.GHCR_REPOSITORY }}
           tags: |
             type=raw,value=nightly-arm64
+            type=raw,value=${{ needs.prepare.outputs.SPT_VERSION }}-nightly-arm64
       - name: 设置 QEMU
         uses: docker/setup-qemu-action@v3
       - name: 设置 Docker Buildx
@@ -288,14 +290,14 @@ jobs:
 
             AMD64 镜像：  
             ```bash
-            docker pull stblog/spt-server:nightly
             docker pull ghcr.io/xxoolm/spt-server:nightly
+            docker pull ghcr.io/xxoolm/spt-server:4.0.2-nightly
             ```
 
             ARM64 镜像：  
             ```bash
-            docker pull stblog/spt-server:nightly-arm64
             docker pull ghcr.io/xxoolm/spt-server:nightly-arm64
+            docker pull ghcr.io/xxoolm/spt-server:4.0.2-nightly-arm64
             ```
 
             > [!WARNING]  
