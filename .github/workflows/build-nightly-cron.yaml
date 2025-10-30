@@ -2,9 +2,9 @@ name: SPT-服务器 每夜构建
 on:
 #  schedule:
 #    - cron: '30 2 * * *'
-  push:
-    paths:
-      - '.github/workflows/build-nightly-cron.yaml'
+  #push:
+  #  paths:
+  #    - '.github/workflows/build-nightly-cron.yaml'
   workflow_dispatch:
 env:
   SERVER_URL: https://github.com
