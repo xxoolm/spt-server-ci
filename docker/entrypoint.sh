@@ -50,4 +50,8 @@ sed -Ei "s/\"webSocketPingDelayMs\": ([0-9]{1,}),/\"webSocketPingDelayMs\": ${PI
 
 chmod +x SPT.Server.Linux && ./SPT.Server.Linux
 
-mv sptLogger.Development.json sptLogger.json
+if [ ! -f "sptLogger.json" ]; then
+  if [ -f "sptLogger.Development.json" ]; then
+    cp sptLogger.Development.json sptLogger.json
+  fi
+fi
