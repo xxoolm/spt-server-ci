@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       PROCEED: true  # 始终构建
-      CLIENT_VERSION: 4.0.0  # 强制指定 EFT 版本
-      SPT_VERSION: 4.0.0
+      CLIENT_VERSION: 4.0.2  # 强制指定 EFT 版本
+      SPT_VERSION: 4.0.2
       SPT_COMMIT_ID: ${{ env.FIXED_COMMIT }}
       BUILD_DATE_TIME: ${{ steps.versions.outputs.DATE_TIME }}
       BUILD_TYPE: BLEEDINGEDGEMODS
@@ -28,12 +28,12 @@ jobs:
       - name: 设置版本信息
         id: versions
         run: |
-          echo "CLIENT_VERSION=4.0.0" >> $GITHUB_OUTPUT
-          echo "SPT_VERSION=4.0.0" >> $GITHUB_OUTPUT
+          echo "CLIENT_VERSION=4.0.2" >> $GITHUB_OUTPUT
+          echo "SPT_VERSION=4.0.2" >> $GITHUB_OUTPUT
           echo "SPT_COMMIT_ID=${{ env.FIXED_COMMIT }}" >> $GITHUB_OUTPUT
           echo "DATE_TIME=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
           echo "✅ 将构建指定提交：${{ env.FIXED_COMMIT }}"
-          echo "✅ EFT 游戏版本强制设为：4.0.0"
+          echo "✅ EFT 游戏版本强制设为：4.0.2"
         shell: bash
 
   build-server-host:
