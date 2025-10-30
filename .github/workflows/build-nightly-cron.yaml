@@ -9,7 +9,7 @@ on:
 env:
   SERVER_URL: https://github.com
   REPOSITORY_SPT_SERVER: sp-tarkov/server-csharp
-  FIXED_COMMIT: 0582f8d5fca6ec4808056219684e6167b8a8ff89
+  FIXED_COMMIT: 0df4ae717382c92f4e01f3fcc9b7ab3a27bef59f
   NIGHTLY_BRANCH: main
 jobs:
   prepare:
