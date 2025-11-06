@@ -9,15 +9,15 @@ on:
 env:
   SERVER_URL: https://github.com
   REPOSITORY_SPT_SERVER: sp-tarkov/server-csharp
-  FIXED_COMMIT: 0df4ae717382c92f4e01f3fcc9b7ab3a27bef59f
+  FIXED_COMMIT: 96c7feff55822264ad1368ea277dba087f273f2c
   NIGHTLY_BRANCH: main
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
       PROCEED: true  # 始终构建
-      CLIENT_VERSION: 4.0.2  # 强制指定 EFT 版本
-      SPT_VERSION: 4.0.2
+      CLIENT_VERSION: 4.0.3  # 强制指定 EFT 版本
+      SPT_VERSION: 4.0.3
       SPT_COMMIT_ID: ${{ env.FIXED_COMMIT }}
       BUILD_DATE_TIME: ${{ steps.versions.outputs.DATE_TIME }}
       BUILD_TYPE: BLEEDINGEDGEMODS
@@ -33,7 +33,7 @@ jobs:
           echo "SPT_COMMIT_ID=${{ env.FIXED_COMMIT }}" >> $GITHUB_OUTPUT
           echo "DATE_TIME=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
           echo "✅ 将构建指定提交：${{ env.FIXED_COMMIT }}"
-          echo "✅ EFT 游戏版本强制设为：4.0.2"
+          echo "✅ EFT 游戏版本强制设为：4.0.3"
         shell: bash
 
   build-server-host:
