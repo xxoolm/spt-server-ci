@@ -1,55 +1,54 @@
-# Single Player Tarkov - Server Project(community)
 
-Automatically compiles the SPT code daily at midnight and pushes the compiled version to the releases. 
+# Single Player Tarkov - 服务器项目(社区版)
 
-You can find the lanucher from [here](https://github.com/AirryCo/spt-launcher-ci/releases)
+每天午夜自动编译SPT代码，并将编译版本推送到发布页面。
 
-[![SPT-Server Build Release](https://github.com/AirryCo/spt-server-ci/actions/workflows/build-release-cron.yaml/badge.svg)](https://github.com/AirryCo/spt-server-ci/actions/workflows/build-release-cron.yaml)
+你可以从[此处](https://github.com/AirryCo/spt-launcher-ci/releases)获取启动器
 
-[![SPT-Server Build Nightly](https://github.com/AirryCo/spt-server-ci/actions/workflows/build-nightly-cron.yaml/badge.svg)](https://github.com/AirryCo/spt-server-ci/actions/workflows/build-nightly-cron.yaml)
+[![SPT-Server Build Nightly](https://github.com/xxoolm/spt-server-ci/actions/workflows/build-nightly-cron.yaml/badge.svg)](https://github.com/xxoolm/spt-server-ci/actions/workflows/build-nightly-cron.yaml)
 
 
-## How to use
+## 使用方法
 
-### For windows
+### Windows系统
 
-1. go to https://github.com/AirryCo/spt-server-ci/releases
+1. 访问 https://github.com/AirryCo/spt-server-ci/releases  
 
-2. download the `.zip` file
+2. 下载 `.zip` 文件
 
-3. use extraction software to unzip the files
+3. 使用解压缩软件解压文件
 
-4. then run `SPT.Server.exe`
+4. 然后运行 `SPT.Server.exe`
 
-5. run `SPT.Launcher` to connect
+5. 运行 `SPT.Launcher` 进行连接
 
-### For linux
+### Linux系统
 
-repository: ~~https://dev.sp-tarkov.com/medusa/spt-server~~ https://github.com/AirryCo/spt-server
+仓库地址: ~~https://dev.sp-tarkov.com/medusa/spt-server~~   https://github.com/AirryCo/spt-server  
 
-~~SPT Registry: https://dev.sp-tarkov.com/medusa/-/packages/container/spt-server/nightly~~
+~~SPT 镜像仓库: https://dev.sp-tarkov.com/medusa/-/packages/container/spt-server/nightly~~  
 
-Docker Hub: https://hub.docker.com/r/stblog/spt-server
+Docker Hub: https://hub.docker.com/r/stblog/spt-server  
 
-Github Container Registry: https://github.com/AirryCo/spt-server-ci/pkgs/container/spt-server
+Github 容器注册表: https://github.com/AirryCo/spt-server-ci/pkgs/container/spt-server  
 
-Aliyun Registry: registry.cn-shenzhen.aliyuncs.com/spt-server/spt-server
+阿里云镜像仓库: registry.cn-shenzhen.aliyuncs.com/spt-server/spt-server
 
-> [!NOTE]
-> ***Mods using***: please replace all instances of the string "/snapshot/project" in the mod folder with "/snapshot/workspace/medusa/spt-server/code/project" before running.(**version 3.9 only**，No changes required for version 3.10)
+> [!注意]
+> ***Mods 使用说明***: 在运行前，请将mod文件夹中所有"/snapshot/project"字符串替换为"/snapshot/workspace/medusa/spt-server/code/project"。(**仅限3.9版本**，3.10版本无需更改)
 > 
-> You can run the commond `sed -i "s/\/snapshot\/workspace\/project/\/snapshot\/workspace\/medusa\/spt-server\/code\/project/g" $(grep -rl "/snapshot/workspace" .)` to replace all.
+> 你可以运行命令 `sed -i "s/\/snapshot\/workspace\/project/\/snapshot\/workspace\/medusa\/spt-server\/code\/project/g" $(grep -rl "/snapshot/workspace" .)` 进行全局替换。
 
-### 3.10
+### 3.10版本
 
-1. use docker shell
+1. 使用docker命令行
 
 ```bash
 docker pull stblog/spt-server:nightly
 docker run -d --name spt-server -v ./spt-server:/opt/spt-server -e backendIp=192.168.1.1 -e backendPort=6969 -p 6969:6969 stblog/spt-server:nightly
 ```
 
-2. or use docker compose
+2. 或使用docker compose
 
 ```yaml
 services:
@@ -66,17 +65,17 @@ services:
       - backendPort=6969
 ```
 
-`backendIp`(optional): Your server IP, default is your container IP like `172.17.0.2`. If `network_mode` is set to `host`, it will be your server IP by default
+`backendIp`(可选): 你的服务器IP，默认是容器IP如`172.17.0.2`。如果`network_mode`设置为`host`，则默认使用你的服务器IP
 
-`backendPort`(optional): Your server port, default is `6969`
+`backendPort`(可选): 你的服务器端口，默认是`6969`
 
-### 3.9
+### 3.9版本
 
 ```bash
 docker run -d --name spt-server --restart always -p 6969:6969 -v ./spt-server:/opt/spt-server stblog/spt-server:3.9
 ```
 
-docker compose
+docker compose配置
 ```yaml
 services:
   spt-server:
@@ -89,4 +88,4 @@ services:
       - '6969:6969'
 ```
 
-You need to modify the value of `backendIp` to your server IP in `SPT_Data/Server/configs/http.json`
+你需要在 `SPT_Data/Server/configs/http.json` 文件中将 `backendIp` 的值修改为你的服务器IP地址
